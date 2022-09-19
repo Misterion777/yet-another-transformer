@@ -15,7 +15,7 @@ class Encoder(nn.Module):
         layers = [EncoderLayer(emb_dim, model_dim) for _ in range(num_layers)]
         self.encoder_layers = nn.Sequential(*layers)  # Is it sequential?
 
-    def forward(self, input):
+    def forward(self, input: torch.Tensor):
         input = self.emb(input)
         return self.encoder_layers(input)
 
@@ -39,7 +39,7 @@ class Decoder(nn.Module):
 
         self.final_proj = nn.Linear(model_dim, model_dim)
 
-    def forward(self, input):
+    def forward(self, input: torch.Tensor):
         input = self.emb(input)
         input = self.decoder_layers(input)
         input = self.final_proj(input)

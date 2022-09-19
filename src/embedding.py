@@ -9,7 +9,7 @@ class PositionalEncoding(nn.Module):
         super().__init__()
         self.emb_size = emb_size
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         batch_size = x.size(0)
         enc = torch.zeros(
             batch_size, x.size(1), self.emb_size
@@ -39,6 +39,6 @@ class WordEmbedding(nn.Module):
         self.emb = nn.Embedding(dict_size, emb_size)
         self.pe = PositionalEncoding(emb_size)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         x = self.emb(x)
         return x + self.pe(x)

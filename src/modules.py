@@ -26,7 +26,7 @@ class EncoderLayer(nn.Module):
         self.ffn = FFN(model_dim, model_dim)
         self.norm2 = nn.LayerNorm(model_dim)
 
-    def forward(self, input):
+    def forward(self, input: torch.Tensor):
         attn_result = self.self_attn(input, input, input)
         attn_result = self.norm1(input + attn_result)
 
@@ -54,7 +54,7 @@ class DecoderLayer(nn.Module):
         self.ffn = FFN(model_dim, model_dim)
         self.norm3 = nn.LayerNorm(model_dim)
 
-    def forward(self, input, encoder_output):
+    def forward(self, input: torch.Tensor, encoder_output: torch.Tensor):
         attn_result = self.self_attn(input, input, input)
         attn_result = self.norm1(input + attn_result)
 
