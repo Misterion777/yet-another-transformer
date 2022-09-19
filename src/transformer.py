@@ -15,9 +15,9 @@ class Encoder(nn.Module):
         layers = [EncoderLayer(emb_dim, model_dim) for _ in range(num_layers)]
         self.encoder_layers = nn.Sequential(*layers)  # Is it sequential?
 
-    def forward(self, x):
-        x = self.emb(x)
-        return self.encoder_layers(x)
+    def forward(self, input):
+        input = self.emb(input)
+        return self.encoder_layers(input)
 
 
 class Decoder(nn.Module):
@@ -39,8 +39,8 @@ class Decoder(nn.Module):
 
         self.final_proj = nn.Linear(model_dim, model_dim)
 
-    def forward(self, x):
-        x = self.emb(x)
-        x = self.decoder_layers(x)
-        x = self.final_proj(x)
-        return torch.softmax(x, 1)
+    def forward(self, input):
+        input = self.emb(input)
+        input = self.decoder_layers(input)
+        input = self.final_proj(input)
+        return torch.softmax(input, 1)

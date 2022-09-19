@@ -16,8 +16,7 @@ class PositionalEncoding(nn.Module):
         )  # B, sentence_length, emb_size
 
         i = (
-            2
-            * torch.arange(self.emb_size).expand(batch_size, x.size(1), -1)
+            torch.arange(self.emb_size).expand(batch_size, x.size(1), -1)
             / self.emb_size
         )  # B, sentence_length, emb_size
         pos = torch.arange(x.size(1)).expand(

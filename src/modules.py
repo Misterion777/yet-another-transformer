@@ -26,9 +26,9 @@ class EncoderLayer(nn.Module):
         self.ffn = FFN(model_dim, model_dim)
         self.norm2 = nn.LayerNorm(model_dim)
 
-    def forward(self, x):
-        attn_result = self.self_attn(x, x, x)
-        attn_result = self.norm1(x + attn_result)
+    def forward(self, input):
+        attn_result = self.self_attn(input, input, input)
+        attn_result = self.norm1(input + attn_result)
 
         ffn_result = self.ffn(attn_result)
         ffn_result = self.norm2(attn_result + ffn_result)
@@ -45,7 +45,7 @@ class DecoderLayer(nn.Module):
     ):
         self.self_attn = MultiHeadAttention(
             in_dim, in_dim, model_dim, attn_heads
-        )  # TODO: MASKED
+        )
         self.norm1 = nn.LayerNorm(model_dim)
         self.encoder_attn = MultiHeadAttention(
             encoder_dim, model_dim, model_dim, attn_heads

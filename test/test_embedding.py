@@ -8,12 +8,12 @@ h = 4
 d_k = d_v = int(d_model / h)  # 16
 b_size = 8
 
-sent_len = 128
+seq_len = 128
 
 
 def test_pe():
     batched_indices = torch.randint(
-        low=0, high=DICT_SIZE, size=(b_size, sent_len)
+        low=0, high=DICT_SIZE, size=(b_size, seq_len)
     )
 
     pe = PositionalEncoding(d_model)
@@ -24,7 +24,7 @@ def test_pe():
 
 def test_emb():
     batched_indices = torch.randint(
-        low=0, high=DICT_SIZE, size=(b_size, sent_len)
+        low=0, high=DICT_SIZE, size=(b_size, seq_len)
     )
 
     emb = WordEmbedding(d_model)

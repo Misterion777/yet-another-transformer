@@ -1,5 +1,8 @@
+from typing import Optional
 import torch
 from torch import nn
+
+FLOAT_MIN = torch.tensor(torch.finfo().min)
 
 
 class DotProductAttention(nn.Module):
@@ -7,9 +10,21 @@ class DotProductAttention(nn.Module):
         super().__init__()
         self.k_dim = torch.tensor(k_dim)
 
-    def forward(self, query, key, value):
-        mul = torch.matmul(query, key.T)
+    def forward(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        mask: Optional[torch.Tensor] = None,
+    ):
+        mul = torch.matmul(query, key.transpose(1, 2))  # keep batch dimension
         mul = mul / torch.sqrt(self.k_dim)
+
+        # stable masking
+        if mask is not None:
+            inf_mask = torch.maximum(torch.log(mask), FLOAT_MIN)
+            mul = mul + inf_mask
+
         mul = torch.softmax(mul, 1)
         result = torch.matmul(mul, value)
         return result
@@ -23,11 +38,17 @@ class AttentionHead(nn.Module):
         self.v_linear = nn.Linear(v_dim, model_dim, bias=False)
         self.attn = DotProductAttention(k_dim)
 
-    def forward(self, query, key, value):
+    def forward(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        mask: Optional[torch.Tensor] = None,
+    ):
         q = self.q_linear(query)
         k = self.k_linear(key)
         v = self.v_linear(value)
-        return self.attn(q, k, v)
+        return self.attn(q, k, v, mask)
 
 
 class MultiHeadAttention(nn.Module):
@@ -45,7 +66,15 @@ class MultiHeadAttention(nn.Module):
         )
         self.proj = nn.Linear(num_heads * model_dim, model_dim, bias=False)
 
-    def forward(self, query, key, value):
-        result = [head(query, key, value) for head in self.attn_heads]
-        result = torch.cat(result, dim=1)
+    def forward(
+        self,
+        query: torch.Tensor,
+        key: torch.Tensor,
+        value: torch.Tensor,
+        mask: Optional[torch.Tensor] = None,
+    ):
+        result = [head(query, key, value, mask) for head in self.attn_heads]
+        result = torch.cat(
+            result, dim=-1
+        )  # B, seq_len, num_heads * model_dim,
         return self.proj(result)
