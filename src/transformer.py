@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from src.constants import N_LAYERS
+from src.constants import DICT_SIZE, N_LAYERS
 from src.embedding import WordEmbedding
 from src.modules import DecoderLayer, EncoderLayer
 
@@ -12,12 +12,15 @@ class Encoder(nn.Module):
         super().__init__()
         self.emb = WordEmbedding(emb_dim)
 
-        layers = [EncoderLayer(emb_dim, model_dim) for _ in range(num_layers)]
-        self.encoder_layers = nn.Sequential(*layers)  # Is it sequential?
+        self.encoder_layers = nn.ModuleList(
+            [EncoderLayer(emb_dim, model_dim) for _ in range(num_layers)]
+        )
 
     def forward(self, input: torch.Tensor):
         input = self.emb(input)
-        return self.encoder_layers(input)
+        for enc in self.encoder_layers:
+            input = enc(input)
+        return input
 
 
 class Decoder(nn.Module):
@@ -31,16 +34,39 @@ class Decoder(nn.Module):
         super().__init__()
         self.emb = WordEmbedding(emb_dim)
 
-        layers = [
-            DecoderLayer(emb_dim, enc_dim, model_dim)
-            for _ in range(num_layers)
-        ]
-        self.decoder_layers = nn.Sequential(*layers)  # Is it sequential?
+        self.decoder_layers = nn.ModuleList(
+            [
+                DecoderLayer(emb_dim, enc_dim, model_dim)
+                for _ in range(num_layers)
+            ]
+        )
 
-        self.final_proj = nn.Linear(model_dim, model_dim)
-
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: torch.Tensor, encoder_output: torch.Tensor):
         input = self.emb(input)
-        input = self.decoder_layers(input)
-        input = self.final_proj(input)
-        return torch.softmax(input, 1)
+
+        for dec in self.decoder_layers:
+            input = dec(input, encoder_output)
+
+        return input
+
+
+class GeneratorTransformer(nn.Module):
+    def __init__(
+        self,
+        emb_dim: int,
+        model_dim: int,
+        num_layers: int = N_LAYERS,
+        dict_size: int = DICT_SIZE,
+    ):
+        super().__init__()
+
+        self.encoder = Encoder(emb_dim, model_dim, num_layers)
+        self.decoder = Decoder(emb_dim, model_dim, model_dim, num_layers)
+
+        self.tokens_proj = nn.Linear(model_dim, dict_size)
+
+    def forward(self, seq_in: torch.Tensor, seq_out: torch.Tensor):
+        enc_out = self.encoder(seq_in)
+        dec_out = self.decoder(seq_out, enc_out)
+        tokens_logits = self.tokens_proj(dec_out)
+        return torch.softmax(tokens_logits, 1)
