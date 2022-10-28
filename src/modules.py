@@ -77,8 +77,7 @@ class DecoderLayer(nn.Module):
 def construct_future_mask(seq_len: int, batch_size: int = 1):
     """
     Construct a binary mask that contains 1's for all previous connections (autoregressive) and 0's for all outgoing future connections.
-    This mask will be applied to the attention logits in decoder self-attention such that all logits with a 0 mask
-    are set to -inf.
+    This mask will be applied to the attention logits in decoder self-attention such that all logits with a 0 mask are set to -inf.
     :param seq_len: length of the input sequence
     :return: (seq_len,seq_len) mask
     """

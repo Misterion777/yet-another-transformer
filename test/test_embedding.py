@@ -31,13 +31,3 @@ def test_emb():
     r = emb(batched_indices)
 
     assert r.size() == torch.Size((b_size, batched_indices.size(1), d_model))
-
-
-# q = torch.randn(b_size, d_k)
-# k = torch.randn(b_size, d_k)
-# v = torch.randn(b_size, d_v)
-
-# a = AttentionHead(d_v,d_k,d_model)
-# r = a(q, k, v)
-# print(r)
-# print(r.size())
