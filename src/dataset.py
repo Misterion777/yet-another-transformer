@@ -95,7 +95,7 @@ class WikiText(Dataset):
         with open(self.tokens_path, "r", encoding="utf8") as f:
             for line in f:
                 line_tokens = self.dictionary.tokenize(line)
-                line_ids = self.dictionary.add_tokens(self.tokens)
+                line_ids = self.dictionary.add_tokens(line_tokens)
                 self.tokens.extend(line_tokens)
                 self.token_ids.extend(line_ids)
 
