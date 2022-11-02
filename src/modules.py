@@ -72,8 +72,6 @@ class DecoderLayer(nn.Module):
         ffn_result = self.norm2(enc_result + ffn_result)
         return ffn_result
 
-
-# Idea is taken from https://github.com/jsbaan/transformer-from-scratch/blob/main/utils.py
 def construct_future_mask(seq_len: int, batch_size: int = 1):
     """
     Construct a binary mask that contains 1's for all previous connections (autoregressive) and 0's for all outgoing future connections.

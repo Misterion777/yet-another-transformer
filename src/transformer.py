@@ -7,10 +7,10 @@ from src.modules import DecoderLayer, EncoderLayer
 
 class Encoder(nn.Module):
     def __init__(
-        self, emb_dim: int, model_dim: int, num_layers: int = N_LAYERS
+        self, emb_dim: int, model_dim: int, num_layers: int = N_LAYERS, dict_size: int = DICT_SIZE
     ):
         super().__init__()
-        self.emb = WordEmbedding(emb_dim)
+        self.emb = WordEmbedding(emb_dim,dict_size)
 
         self.encoder_layers = nn.ModuleList(
             [EncoderLayer(emb_dim, model_dim) for _ in range(num_layers)]
@@ -30,9 +30,11 @@ class Decoder(nn.Module):
         enc_dim: int,
         model_dim: int,
         num_layers: int = N_LAYERS,
+        dict_size: int = DICT_SIZE
+        
     ):
         super().__init__()
-        self.emb = WordEmbedding(emb_dim)
+        self.emb = WordEmbedding(emb_dim,dict_size)
 
         self.decoder_layers = nn.ModuleList(
             [
@@ -60,8 +62,8 @@ class GeneratorTransformer(nn.Module):
     ):
         super().__init__()
 
-        self.encoder = Encoder(emb_dim, model_dim, num_layers)
-        self.decoder = Decoder(emb_dim, model_dim, model_dim, num_layers)
+        self.encoder = Encoder(emb_dim, model_dim, num_layers,dict_size)
+        self.decoder = Decoder(emb_dim, model_dim, model_dim, num_layers,dict_size)
 
         self.tokens_proj = nn.Linear(model_dim, dict_size)
 
@@ -70,3 +72,6 @@ class GeneratorTransformer(nn.Module):
         dec_out = self.decoder(seq_out, enc_out)
         tokens_logits = self.tokens_proj(dec_out)
         return torch.softmax(tokens_logits, 1)
+
+    # def generate(self, seq_in: torch.Tensor):
+

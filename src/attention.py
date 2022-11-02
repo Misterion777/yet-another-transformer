@@ -22,6 +22,7 @@ class DotProductAttention(nn.Module):
 
         # stable masking
         if mask is not None:
+            mask = mask.to(mul.device)
             inf_mask = torch.maximum(torch.log(mask), FLOAT_MIN)
             mul = mul + inf_mask
 
