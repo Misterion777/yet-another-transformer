@@ -52,16 +52,11 @@ TOKENIZERS = {
     "split": split_tokenize,
 }
 
-
-BOS_TOKEN = "<bos>"
-EOS_TOKEN = "<eos>"
-UNK_TOKEN = "<unk>"
 class Dictionary:
-    spec_tokens = {
-        BOS_TOKEN : 0,
-        EOS_TOKEN : 1,
-        UNK_TOKEN : 2,
-    }
+    BOS_TOKEN = "<bos>"
+    EOS_TOKEN = "<eos>"
+    UNK_TOKEN = "<unk>"
+
     def __init__(self, tokenizer_type: Literal["re", "space", "split"] = "re"):
         self.word2idx = {}
         self.idx2word = []
@@ -94,8 +89,7 @@ class Dictionary:
         return tokens
 
     def _add_spec_tokens(self):
-        self.word2idx.update(self.spec_tokens)
-        self.idx2word.extend(self.spec_tokens.keys())
+        self.add_tokens(self.BOS_TOKEN,self.EOS_TOKEN,self.UNK_TOKEN)
 
     def _sub_spec_token(self,token):
         if token == "\n":
