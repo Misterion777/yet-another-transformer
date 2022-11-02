@@ -64,7 +64,7 @@ class TransformerTrainer:
 
         best_ppl = 10e8 # just large number
         for epoch in range(1, num_epochs):
-            train_loss, train_ppl = self._train_epoch(train_loader)
+            train_loss, train_ppl = self._train_epoch(train_loader,epoch)
             val_loss, val_ppl = self.test(val_loader)            
             self._write_epoch_info(epoch,train_loss,train_ppl,val_loss,val_ppl)
 
