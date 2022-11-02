@@ -6,6 +6,12 @@ import torch.optim.lr_scheduler as scheduler
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 import math
+import sys
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[1]  #root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
 
 from src.constants import BATCH_SIZE, EMB_DIM, HIDDEN_DIM
 
