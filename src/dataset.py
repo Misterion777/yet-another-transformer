@@ -88,7 +88,7 @@ class Dictionary:
         return tokens
 
     def _add_spec_tokens(self):
-        self.add_tokens(self.BOS_TOKEN,self.EOS_TOKEN,self.UNK_TOKEN)
+        self.add_tokens([self.BOS_TOKEN,self.EOS_TOKEN,self.UNK_TOKEN])
 
     def _sub_spec_token(self,token):
         if token == "\n":
