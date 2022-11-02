@@ -1,14 +1,14 @@
 import torch
 from torch import nn
 from src.attention import MultiHeadAttention
-from src.constants import ATTENTION_HEADS
+from src.constants import ATTENTION_HEADS, FF_DIM
 
 
 class FFN(nn.Module):
-    def __init__(self, in_dim: int, model_dim: int):
+    def __init__(self, in_dim: int, model_dim: int,ffn_size:int=FF_DIM):
         super().__init__()
-        self.lin1 = nn.Linear(in_dim, model_dim)
-        self.lin2 = nn.Linear(in_dim, model_dim)
+        self.lin1 = nn.Linear(in_dim, ffn_size)
+        self.lin2 = nn.Linear(ffn_size, model_dim)
 
     def forward(self, x):
         x = self.lin1(x).relu()

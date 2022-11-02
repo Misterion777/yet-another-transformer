@@ -129,6 +129,7 @@ class TransformerTrainer:
             target = target.to(DEVICE)
 
             out = self.model(data,target) 
+            out = out.transpose(1,2)
 
             loss = self.criterion(out,target)
             curr_loss = loss.item()
