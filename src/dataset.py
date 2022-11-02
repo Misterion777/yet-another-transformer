@@ -53,10 +53,15 @@ TOKENIZERS = {
 }
 
 
+BOS_TOKEN = "<bos>"
+EOS_TOKEN = "<eos>"
+UNK_TOKEN = "<unk>"
 class Dictionary:
-    EOS_TOKEN = "<eos>"
-    UNK_TOKEN = "<unk>"
-
+    spec_tokens = {
+        BOS_TOKEN : 0,
+        EOS_TOKEN : 1,
+        UNK_TOKEN : 2,
+    }
     def __init__(self, tokenizer_type: Literal["re", "space", "split"] = "re"):
         self.word2idx = {}
         self.idx2word = []
@@ -69,13 +74,13 @@ class Dictionary:
         else:
             ids = []
             for tok in tokens:
+                tok = self._sub_spec_token(tok)                
                 tok_id = self.word2idx.get(tok,self.word2idx[self.UNK_TOKEN])                
                 ids.append(tok_id)
             return ids
 
     def add_token(self, word):
-        if word == "\n":
-            word = self.EOS_TOKEN
+        word = self._sub_spec_token(word)
         if word not in self.word2idx:
             self.idx2word.append(word)
             self.word2idx[word] = len(self.idx2word) - 1
@@ -89,8 +94,13 @@ class Dictionary:
         return tokens
 
     def _add_spec_tokens(self):
-        self.add_token(self.EOS_TOKEN)
-        self.add_token(self.UNK_TOKEN)
+        self.word2idx.update(self.spec_tokens)
+        self.idx2word.extend(self.spec_tokens.keys())
+
+    def _sub_spec_token(self,token):
+        if token == "\n":
+            return self.EOS_TOKEN
+        return token
 
     def __len__(self):
         return len(self.idx2word)
@@ -105,12 +115,14 @@ class WikiText(Dataset):
 
         self.tokens = []
         self.token_ids = []
+        print(f"Building dataset defined by path: '{tokens_path}'")
         with open(self.tokens_path, "r", encoding="utf8") as f:
             for line in f:
                 line_tokens = self.dictionary.tokenize(line)
                 line_ids = self.dictionary.tokens2id(line_tokens,add_unknown=build_dict)
                 self.tokens.extend(line_tokens)
                 self.token_ids.extend(line_ids)
+        print(f"Building finished. Dataset length: {len(self)}")
 
     def __len__(self):
         return len(self.token_ids) // self.seq_len
