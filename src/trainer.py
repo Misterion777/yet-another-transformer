@@ -18,20 +18,15 @@ from src.constants import BATCH_SIZE, EMB_DIM, HIDDEN_DIM
 from src.dataset import Dictionary, WikiText
 from src.transformer import GeneratorTransformer
 
-def get_backend():
-    if not torch.backends.mps.is_available():
-        if not torch.backends.mps.is_built():
-            print(
-                "MPS not available because the current PyTorch install was not "
-                "built with MPS enabled."
-            )
+def get_backend():    
+    if torch.backends.mps.is_available():
+        if torch.backends.mps.is_built():
+            return "mps"            
         else:
             print(
-                "MPS not available because the current MacOS version is not 12.3+ "
-                "and/or you do not have an MPS-enabled device on this machine."
-            )
-    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        return "mps"
+                "MPS device detected, but it's not available because the current PyTorch install was not "
+                "built with MPS enabled."
+            )        
     if torch.cuda.is_available():
         return "cuda"
     return "cpu"
@@ -107,10 +102,10 @@ class TransformerTrainer:
             out = self.model(data,target) 
             out = out.transpose(1,2) # Should have shape (batch_size,dict_size,seq_len)
 
-            loss = self.criterion(out,target)
-            curr_loss = loss.item()
+            loss = self.criterion(out,target)            
+            curr_loss = loss.item() / len(data)
 
-            total_loss += curr_loss
+            total_loss += loss.item()
             loss.backward()  # Derive gradients.
             self.optimizer.step()  # Update parameters based on gradients.
 
@@ -124,7 +119,7 @@ class TransformerTrainer:
 
         pbar = tqdm(loader, total=len(loader))
         total_loss = 0
-        for data,target in loader:        
+        for data,target in pbar:        
             data = data.to(DEVICE)
             target = target.to(DEVICE)
 
@@ -132,8 +127,8 @@ class TransformerTrainer:
             out = out.transpose(1,2)
 
             loss = self.criterion(out,target)
-            curr_loss = loss.item()
-            total_loss += curr_loss
+            curr_loss = loss.item() / len(data)
+            total_loss += loss.item()
             pbar.set_description(f"Test set. Loss: {curr_loss:.4f}, PPL: {math.exp(curr_loss):.4f}")
         mean_loss = total_loss / len(loader.dataset)
         mean_ppl = math.exp(mean_loss)
@@ -144,9 +139,11 @@ if __name__ == "__main__":
     wiki_dict = Dictionary()
     train_ds = WikiText("data/wikitext-2/wiki.train.tokens",wiki_dict,build_dict=True)
     val_ds = WikiText("data/wikitext-2/wiki.valid.tokens", wiki_dict)
+    test_ds = WikiText("data/wikitext-2/wiki.test.tokens", wiki_dict)
 
     train_loader = DataLoader(train_ds,batch_size=BATCH_SIZE,shuffle=False)
     val_loader = DataLoader(val_ds,batch_size=BATCH_SIZE,shuffle=False)
+    test_loader = DataLoader(test_ds,batch_size=BATCH_SIZE,shuffle=False)
 
     print(f"Dictionary size: {len(wiki_dict)}")
     model = GeneratorTransformer(EMB_DIM,HIDDEN_DIM,dict_size=len(wiki_dict))
@@ -154,3 +151,7 @@ if __name__ == "__main__":
     trainer = TransformerTrainer(model)
 
     trainer.train(train_loader,val_loader)
+
+    print("Training complete, running evaluation on test set.")
+    mean_loss, mean_ppl = trainer.test(test_loader)
+    print(f"Test set PPL: {mean_ppl}")
