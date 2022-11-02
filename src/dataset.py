@@ -1,5 +1,4 @@
 import re
-from typing import Literal
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -57,7 +56,7 @@ class Dictionary:
     EOS_TOKEN = "<eos>"
     UNK_TOKEN = "<unk>"
 
-    def __init__(self, tokenizer_type: Literal["re", "space", "split"] = "re"):
+    def __init__(self, tokenizer_type = "re"):
         self.word2idx = {}
         self.idx2word = []
         self.tokenizer = TOKENIZERS[tokenizer_type]
