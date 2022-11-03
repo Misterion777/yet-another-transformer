@@ -112,9 +112,8 @@ class TransformerTrainer:
             self.optimizer.step()  # Update parameters based on gradients.
 
             # Rough estimate of per-token accuracy in the current training batch
-            accuracy = (
-                torch.sum(out.argmax(dim=1) == target)
-            ) / torch.numel(target)
+            accuracy = (torch.sum(out.argmax(dim=1) == target) / torch.numel(target)).item()
+
             accuracies.append(accuracy)
 
             pbar.set_description(f"Epoch #{epoch_num}. Loss: {curr_loss:.4f}, PPL: {np.exp(curr_loss):.4f} ACC: {accuracy:.4f}")
@@ -140,9 +139,7 @@ class TransformerTrainer:
             total_loss += loss.item()
 
             # Rough estimate of per-token accuracy in the current training batch
-            accuracy = (
-                torch.sum(out.argmax(dim=1) == target)
-            ) / torch.numel(target)
+            accuracy = (torch.sum(out.argmax(dim=1) == target) / torch.numel(target)).item()
             accuracies.append(accuracy)
 
             pbar.set_description(f"Test set. Loss: {curr_loss:.4f}, PPL: {np.exp(curr_loss):.4f} ACC: {accuracy:.4f}")
