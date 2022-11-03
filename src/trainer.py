@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 import torch.optim.lr_scheduler as scheduler
 from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
-import math
+import numpy as np
 import sys
 
 FILE = Path(__file__).resolve()
@@ -59,9 +59,10 @@ class TransformerTrainer:
 
         best_ppl = 10e8 # just large number
         for epoch in range(1, num_epochs):
-            train_loss, train_ppl = self._train_epoch(train_loader,epoch)
-            val_loss, val_ppl = self.test(val_loader)            
-            self._write_epoch_info(epoch,train_loss,train_ppl,val_loss,val_ppl)
+            train_loss, train_ppl, train_acc = self._train_epoch(train_loader,epoch)
+            val_loss, val_ppl, val_acc = self.test(val_loader)            
+            self._write_epoch_info(epoch,"train",loss=train_loss,ppl=train_ppl,acc=train_acc)
+            self._write_epoch_info(epoch,"val",loss=val_loss,ppl=val_ppl,acc=val_acc)
 
             self.scheduler.step()
             self.writer.add_scalar(
@@ -81,25 +82,26 @@ class TransformerTrainer:
                 best_ppl = val_ppl
 
 
-    def _write_epoch_info(self,epoch,train_loss,train_ppl,val_loss,val_ppl):
-        self.writer.add_scalar("train/loss", train_loss, epoch)
-        self.writer.add_scalar("train/ppl", train_ppl, epoch)            
-        self.writer.add_scalar("val/loss", val_loss, epoch)
-        self.writer.add_scalar("val/ppl", val_ppl, epoch)            
-
-
+    def _write_epoch_info(self,epoch:int,stage:str,**kwargs):
+        for key,item in kwargs.items():
+            self.writer.add_scalar(f"{stage}/{key}", item, epoch)
 
     def _train_epoch(self, loader: DataLoader,epoch_num:int):
         self.model.train()
 
         pbar = tqdm(loader, total=len(loader))
         total_loss = 0
+        accuracies = []
         for data,target in pbar:  # Iterate in batches over the training dataset.
             self.optimizer.zero_grad()  # Clear gradients.
             data = data.to(DEVICE)
             target = target.to(DEVICE) # (batch_size,seq_len)
 
             out = self.model(data,target) 
+            
+            out = out[:, 1:-1, :] # Ignore BOS and EOS when calculating loss
+            target = target[:, 1:-1] # Ignore BOS and EOS when calculating loss
+            
             out = out.transpose(1,2) # Should have shape (batch_size,dict_size,seq_len)
 
             loss = self.criterion(out,target)            
@@ -109,16 +111,23 @@ class TransformerTrainer:
             loss.backward()  # Derive gradients.
             self.optimizer.step()  # Update parameters based on gradients.
 
-            pbar.set_description(f"Epoch #{epoch_num}. Loss: {curr_loss:.4f}, PPL: {math.exp(curr_loss):.4f}")
+            # Rough estimate of per-token accuracy in the current training batch
+            accuracy = (
+                torch.sum(out.argmax(dim=1) == target)
+            ) / torch.numel(target)
+            accuracies.append(accuracy)
+
+            pbar.set_description(f"Epoch #{epoch_num}. Loss: {curr_loss:.4f}, PPL: {np.exp(curr_loss):.4f} ACC: {accuracy:.4f}")
         mean_loss = total_loss / len(loader.dataset)
-        mean_ppl = math.exp(mean_loss)
-        return mean_loss, mean_ppl        
+        mean_ppl = np.exp(mean_loss)
+        return mean_loss, mean_ppl, np.mean(accuracies)
 
     def test(self, loader: DataLoader):
         self.model.eval()
 
         pbar = tqdm(loader, total=len(loader))
         total_loss = 0
+        accuracies = []
         for data,target in pbar:        
             data = data.to(DEVICE)
             target = target.to(DEVICE)
@@ -129,10 +138,17 @@ class TransformerTrainer:
             loss = self.criterion(out,target)
             curr_loss = loss.item() / len(data)
             total_loss += loss.item()
-            pbar.set_description(f"Test set. Loss: {curr_loss:.4f}, PPL: {math.exp(curr_loss):.4f}")
+
+            # Rough estimate of per-token accuracy in the current training batch
+            accuracy = (
+                torch.sum(out.argmax(dim=1) == target)
+            ) / torch.numel(target)
+            accuracies.append(accuracy)
+
+            pbar.set_description(f"Test set. Loss: {curr_loss:.4f}, PPL: {np.exp(curr_loss):.4f} ACC: {accuracy:.4f}")
         mean_loss = total_loss / len(loader.dataset)
-        mean_ppl = math.exp(mean_loss)
-        return mean_loss, mean_ppl
+        mean_ppl = np.exp(mean_loss)
+        return mean_loss, mean_ppl, np.mean(accuracies)
         
 
 if __name__ == "__main__":
@@ -151,7 +167,13 @@ if __name__ == "__main__":
     trainer = TransformerTrainer(model)
 
     trainer.train(train_loader,val_loader)
-
     print("Training complete, running evaluation on test set.")
-    mean_loss, mean_ppl = trainer.test(test_loader)
+
+    mean_loss, mean_ppl,mean_acc = trainer.test(test_loader)
     print(f"Test set PPL: {mean_ppl}")
+
+    # for data,target in train_loader:
+    #     generated = model.generate(data,wiki_dict.bos_id)
+    #     generated = generated.cpu().numpy()
+    #     wiki_dict.ids2tokens(generated[0])
+

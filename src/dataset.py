@@ -62,6 +62,18 @@ class Dictionary:
         self.tokenizer = TOKENIZERS[tokenizer_type]
         self._add_spec_tokens()
 
+    @property
+    def bos_id(self):
+        return self.word2idx[self.BOS_TOKEN]
+
+    @property
+    def eos_id(self):
+        return self.word2idx[self.EOS_TOKEN]
+    
+    @property
+    def unk_id(self):
+        return self.word2idx[self.UNK_TOKEN]
+        
     def tokens2id(self,tokens,add_unknown=False):
         if add_unknown:
             return self.add_tokens(tokens)
@@ -69,11 +81,15 @@ class Dictionary:
             ids = []
             for tok in tokens:
                 tok = self._sub_spec_token(tok)                
-                tok_id = self.word2idx.get(tok,self.word2idx[self.UNK_TOKEN])                
+                tok_id = self.word2idx.get(tok,self.unk_id)                
                 ids.append(tok_id)
             return ids
 
+    def ids2tokens(self,ids):                
+        return [self.idx2word[id] for id in ids]
+
     def add_token(self, word):
+        word = word.lower()
         word = self._sub_spec_token(word)
         if word not in self.word2idx:
             self.idx2word.append(word)
@@ -122,13 +138,14 @@ class WikiText(Dataset):
 
     def __getitem__(self, index):
         seq_len = min(self.seq_len, len(self.token_ids) - 1 - index)
+        seq_len -= 2 # BOS AND EOS
 
         start_idx = index * seq_len
         end_idx = (index + 1) * seq_len
 
-        data = torch.tensor(self.token_ids[start_idx:end_idx])
-        target = torch.tensor(self.token_ids[start_idx+1:end_idx+1])
-        return data, target        
+        data = torch.tensor([self.dictionary.bos_id] + self.token_ids[start_idx:end_idx] + [self.dictionary.eos_id])
+        target = torch.tensor([self.dictionary.bos_id] + self.token_ids[start_idx+1:end_idx+1] + [self.dictionary.eos_id])
+        return data, target
 
 
 if __name__ == "__main__":

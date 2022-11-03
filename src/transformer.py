@@ -73,5 +73,24 @@ class GeneratorTransformer(nn.Module):
         tokens_logits = self.tokens_proj(dec_out)
         return torch.softmax(tokens_logits, 1)
 
-    # def generate(self, seq_in: torch.Tensor):
+    @torch.no_grad()
+    def generate(self, seq_in: torch.Tensor,bos_id:int,max_length:int=16):
+        batch_size = seq_in.size(0)
+        enc_out = self.encoder(seq_in)
+        dec_in = torch.full((batch_size,1,),bos_id,device=seq_in.device)
+        for i in range(max_length):
+            dec_out = self.decoder(dec_in, enc_out)
+            tokens_logits = self.tokens_proj(dec_out)
+            # Take the argmax over the softmax of the last token to obtain the next-token prediction
+            predicted_tokens = torch.argmax(
+                tokens_logits[:, -1, :], dim=-1
+            ).unsqueeze(1)
+
+            # Append the prediction to the already decoded tokens and construct the new mask
+            dec_in = torch.cat((dec_in, predicted_tokens), dim=-1)
+        return dec_in[:,1:] # ignore bos token
+
+
+
+
 
