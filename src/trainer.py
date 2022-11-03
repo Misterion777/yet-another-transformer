@@ -50,6 +50,9 @@ class TransformerTrainer:
         print("Trainer initialized, printing model architecture:")
         print(self.model)
 
+    def load_checkpoint(self,load_path: str):        
+        loaded = torch.load(load_path,map_location=DEVICE)
+        self.model.load_state_dict(loaded)            
 
     def train(self,train_loader:DataLoader,val_loader:DataLoader,num_epochs: int = 10,save_path="runs/"):
         save_path = Path(save_path) / f"{datetime.now()}"
@@ -163,14 +166,20 @@ if __name__ == "__main__":
 
     trainer = TransformerTrainer(model)
 
-    trainer.train(train_loader,val_loader)
-    print("Training complete, running evaluation on test set.")
-
-    mean_loss, mean_ppl,mean_acc = trainer.test(test_loader)
-    print(f"Test set PPL: {mean_ppl}")
-
-    # for data,target in train_loader:
-    #     generated = model.generate(data,wiki_dict.bos_id)
-    #     generated = generated.cpu().numpy()
-    #     wiki_dict.ids2tokens(generated[0])
+    mode = "inference"
+    if mode == "train":
+        trainer.train(train_loader,val_loader)
+        print("Training complete, running evaluation on test set.")
+        mean_loss, mean_ppl,mean_acc = trainer.test(test_loader)
+        print(f"Test set PPL: {mean_ppl}")
+    elif mode == "inference":
+        trainer.load_checkpoint("checkpoints/checkpoint_001_1.8447.pt")
+        for data,target in train_loader:
+            generated = model.generate(data,wiki_dict.bos_id)
+            data = data[:, 1:-1] # Ignore BOS and EOS
+            generated = generated.cpu().numpy()
+            prompt = wiki_dict.ids2tokens(data[-1])
+            answer = wiki_dict.ids2tokens(generated[-1])
+            print(f"Prompt:{prompt}\nAnswer:{answer}\n")
+            break
 
