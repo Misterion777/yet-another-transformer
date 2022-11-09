@@ -15,7 +15,8 @@ if str(ROOT) not in sys.path:
 
 from src.constants import BATCH_SIZE, EMB_DIM, HIDDEN_DIM
 
-from src.dataset import Dictionary, WikiText
+from src.datasets.dictionary import Dictionary
+from src.datasets.wiki_text import WikiText
 from src.transformer import GeneratorTransformer
 
 def get_backend():    
