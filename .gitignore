@@ -141,3 +141,14 @@ dmypy.json
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+
+# Mac ignore 
+.DS_Store
+
+# Ignore data archives
+*.zip
+
+# Ignore output files
+runs/
+checkpoints/
