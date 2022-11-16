@@ -50,6 +50,7 @@ class Dictionary:
     BOS_TOKEN = "<bos>"
     EOS_TOKEN = "<eos>"
     UNK_TOKEN = "<unk>"
+    PAD_TOKEN = "<pad>"
 
     def __init__(self, tokenizer_type = "re"):
         self.word2idx = {}
@@ -68,6 +69,10 @@ class Dictionary:
     @property
     def unk_id(self):
         return self.word2idx[self.UNK_TOKEN]
+
+    @property
+    def pad_id(self):
+        return self.word2idx[self.PAD_TOKEN]
         
     def tokens2id(self,tokens,add_unknown=False):
         if add_unknown:
@@ -99,7 +104,7 @@ class Dictionary:
         return tokens
 
     def _add_spec_tokens(self):
-        self.add_tokens([self.BOS_TOKEN,self.EOS_TOKEN,self.UNK_TOKEN])
+        self.add_tokens([self.BOS_TOKEN,self.EOS_TOKEN,self.UNK_TOKEN,self.PAD_TOKEN])
 
     def _sub_spec_token(self,token):
         if token == "\n":

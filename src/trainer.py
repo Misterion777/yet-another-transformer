@@ -1,5 +1,7 @@
+import argparse
 from pathlib import Path
 import torch
+from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torch.optim.lr_scheduler as scheduler
@@ -7,6 +9,8 @@ from datetime import datetime
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import sys
+
+from src.datasets.friends import FriendsDialog
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  #root directory
@@ -38,8 +42,9 @@ print(f"Using device: {DEVICE}")
 
 
 class TransformerTrainer:
-    def __init__(self, model):
-        self.model = model        
+    def __init__(self, model:nn.Module, dictionary:Dictionary):
+        self.model = model    
+        self.dictionary = dictionary   
 
         self.optimizer = torch.optim.Adam(
             self.model.parameters(), lr=0.001, weight_decay=5e-4
@@ -47,7 +52,7 @@ class TransformerTrainer:
         self.scheduler = scheduler.StepLR(
             self.optimizer, step_size=1, gamma=0.95
         )
-        self.criterion = torch.nn.CrossEntropyLoss().to(DEVICE)
+        self.criterion = torch.nn.CrossEntropyLoss(ignore_index=self.dictionary.pad_id).to(DEVICE)
         print("Trainer initialized, printing model architecture:")
         print(self.model)
 
@@ -101,10 +106,11 @@ class TransformerTrainer:
             data = data.to(DEVICE)
             target = target.to(DEVICE) # (batch_size,seq_len)
 
-            out = self.model(data,target) 
+            input_mask = data != self.dictionary.pad_id
+            out = self.model(data,target,input_mask) 
             
-            out = out[:, 1:-1, :] # Ignore BOS and EOS when calculating loss
-            target = target[:, 1:-1] # Ignore BOS and EOS when calculating loss
+            # out = out[:, 1:-1, :] # Ignore BOS and EOS when calculating loss
+            # target = target[:, 1:-1] # Ignore BOS and EOS when calculating loss
             
             out = out.transpose(1,2) # Should have shape (batch_size,dict_size,seq_len)
 
@@ -115,7 +121,7 @@ class TransformerTrainer:
             loss.backward()  # Derive gradients.
             self.optimizer.step()  # Update parameters based on gradients.
 
-            # Rough estimate of per-token accuracy in the current training batch
+            # Per-token accuracy in the current training batch
             accuracy = (torch.sum(out.argmax(dim=1) == target) / torch.numel(target)).item()
 
             accuracies.append(accuracy)
@@ -135,7 +141,9 @@ class TransformerTrainer:
             data = data.to(DEVICE)
             target = target.to(DEVICE)
 
-            out = self.model(data,target) 
+            input_mask = data != self.dictionary.pad_id
+
+            out = self.model(data,target,input_mask) 
             out = out.transpose(1,2)
 
             loss = self.criterion(out,target)
@@ -153,34 +161,47 @@ class TransformerTrainer:
         
 
 if __name__ == "__main__":
-    wiki_dict = Dictionary()
-    train_ds = WikiText("data/wikitext-2/wiki.train.tokens",wiki_dict,build_dict=True)
-    val_ds = WikiText("data/wikitext-2/wiki.valid.tokens", wiki_dict)
-    test_ds = WikiText("data/wikitext-2/wiki.test.tokens", wiki_dict)
+    parser = argparse.ArgumentParser(description = 'Start transformer training on one of the datasets')
+    parser.add_argument('--dataset', default="friends",type=str, choices=['wikitext', 'friends'], help='name of the dataset to train on')    
+    args = parser.parse_args()
+
+    ds_dict = Dictionary()
+    if args.dataset == 'wikitext':
+        train_ds = WikiText("data/wikitext-2/wiki.train.tokens",ds_dict,build_dict=True)
+        val_ds = WikiText("data/wikitext-2/wiki.valid.tokens", ds_dict)
+        test_ds = WikiText("data/wikitext-2/wiki.test.tokens", ds_dict)
+    elif args.dataset == 'friends':
+        train_ds = FriendsDialog("data/friends/train.txt",ds_dict,build_dict=True)
+        val_ds = FriendsDialog("data/friends/val.txt", ds_dict)
+        test_ds = FriendsDialog("data/friends/test.txt", ds_dict)
+    else:
+        raise ValueError("Unknown dataset!")
+
 
     train_loader = DataLoader(train_ds,batch_size=BATCH_SIZE,shuffle=False)
     val_loader = DataLoader(val_ds,batch_size=BATCH_SIZE,shuffle=False)
     test_loader = DataLoader(test_ds,batch_size=BATCH_SIZE,shuffle=False)
 
-    print(f"Dictionary size: {len(wiki_dict)}")
-    model = GeneratorTransformer(EMB_DIM,HIDDEN_DIM,dict_size=len(wiki_dict))
+    print(f"Dictionary size: {len(ds_dict)}")
+    model = GeneratorTransformer(EMB_DIM,HIDDEN_DIM,dict_size=len(ds_dict))
 
-    trainer = TransformerTrainer(model)
+    trainer = TransformerTrainer(model,ds_dict)
 
-    mode = "inference"
-    if mode == "train":
-        trainer.train(train_loader,val_loader)
-        print("Training complete, running evaluation on test set.")
-        mean_loss, mean_ppl,mean_acc = trainer.test(test_loader)
-        print(f"Test set PPL: {mean_ppl}")
-    elif mode == "inference":
-        trainer.load_checkpoint("checkpoints/checkpoint_001_1.8447.pt")
-        for data,target in train_loader:
-            generated = model.generate(data,wiki_dict.bos_id)
-            data = data[:, 1:-1] # Ignore BOS and EOS
-            generated = generated.cpu().numpy()
-            prompt = wiki_dict.ids2tokens(data[-1])
-            answer = wiki_dict.ids2tokens(generated[-1])
-            print(f"Prompt:{prompt}\nAnswer:{answer}\n")
-            break
+    # if mode == "train":
+    trainer.train(train_loader,val_loader)
+    print("Training complete, running evaluation on test set.")
+    mean_loss, mean_ppl,mean_acc = trainer.test(test_loader)
+    print(f"Test set PPL: {mean_ppl}")
 
+
+    # mode = "inference"
+    # elif mode == "inference":
+    #     trainer.load_checkpoint("checkpoints/checkpoint_001_1.8447.pt")
+    #     for data,target in train_loader:
+    #         generated = model.generate(data,ds_dict.bos_id)
+    #         data = data[:, 1:-1] # Ignore BOS and EOS
+    #         generated = generated.cpu().numpy()
+    #         prompt = ds_dict.ids2tokens(data[-1])
+    #         answer = ds_dict.ids2tokens(generated[-1])
+    #         print(f"Prompt:{prompt}\nAnswer:{answer}\n")
+    #         break

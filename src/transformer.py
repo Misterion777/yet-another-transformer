@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 from torch import nn
 from src.constants import DICT_SIZE, N_LAYERS
@@ -16,10 +17,10 @@ class Encoder(nn.Module):
             [EncoderLayer(emb_dim, model_dim) for _ in range(num_layers)]
         )
 
-    def forward(self, input: torch.Tensor):
+    def forward(self, input: torch.Tensor,input_mask: Optional[torch.Tensor]=None):
         input = self.emb(input)
         for enc in self.encoder_layers:
-            input = enc(input)
+            input = enc(input,input_mask)
         return input
 
 
@@ -43,11 +44,11 @@ class Decoder(nn.Module):
             ]
         )
 
-    def forward(self, input: torch.Tensor, encoder_output: torch.Tensor):
+    def forward(self, input: torch.Tensor, encoder_output: torch.Tensor,input_mask: Optional[torch.Tensor]=None):
         input = self.emb(input)
 
         for dec in self.decoder_layers:
-            input = dec(input, encoder_output)
+            input = dec(input, encoder_output,input_mask)
 
         return input
 
@@ -67,9 +68,9 @@ class GeneratorTransformer(nn.Module):
 
         self.tokens_proj = nn.Linear(model_dim, dict_size)
 
-    def forward(self, seq_in: torch.Tensor, seq_out: torch.Tensor):
-        enc_out = self.encoder(seq_in)
-        dec_out = self.decoder(seq_out, enc_out)
+    def forward(self, seq_in: torch.Tensor, seq_out: torch.Tensor,seq_in_mask: Optional[torch.Tensor]=None):
+        enc_out = self.encoder(seq_in, seq_in_mask)
+        dec_out = self.decoder(seq_out, enc_out, seq_in_mask)
         tokens_logits = self.tokens_proj(dec_out)
         return torch.softmax(tokens_logits, 1)
 

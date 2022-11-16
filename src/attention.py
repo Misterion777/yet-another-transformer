@@ -20,8 +20,10 @@ class DotProductAttention(nn.Module):
         mul = torch.matmul(query, key.transpose(1, 2))  # keep batch dimension
         mul = mul / torch.sqrt(self.k_dim)
 
-        # stable masking
+        # stable masking 
         if mask is not None:
+            if mask.dim() != mul.dim():
+                mask = mask.unsqueeze(-1).expand(-1,-1,mul.size(-1))                
             mask = mask.to(mul.device)
             inf_mask = torch.maximum(torch.log(mask), FLOAT_MIN)
             mul = mul + inf_mask
