@@ -644,7 +644,7 @@ JOEY: Alright... I've got to go shower. [leaves]
 
 [Phoebe, Ross, Rachel, Chandler exchange money again.]
 
-Credits [Scene: Central Perk. Russ enters. Chandler and Phoebe are sitting on the couch.]
+[Scene: Central Perk. Russ enters. Chandler and Phoebe are sitting on the couch.]
 
 RUSS: Hi.
 
