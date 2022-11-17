@@ -1,7 +1,7 @@
 import torch
 
 from src.constants import DICT_SIZE
-from src.transformer import *
+from src.model.transformer import *
 
 d_model = 64
 h = 4

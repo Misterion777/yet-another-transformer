@@ -6,7 +6,7 @@ from src.constants import EMB_DIM, HIDDEN_DIM
 from src.datasets.dictionary import Dictionary
 from src.datasets.friends import FriendsDialog
 from src.datasets.wiki_text import WikiText
-from src.transformer import GeneratorTransformer
+from src.model.transformer import GeneratorTransformer
 from src.utils import get_backend
 
 DEVICE = torch.device(get_backend())

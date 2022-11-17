@@ -3,9 +3,10 @@ from typing import Optional
 import torch
 from torch import nn
 
-from src.attention import MultiHeadAttention
 from src.constants import ATTENTION_HEADS, DROPOUT_P, FF_DIM
 from src.utils import construct_future_mask
+
+from .attention import MultiHeadAttention
 
 
 class FFN(nn.Module):

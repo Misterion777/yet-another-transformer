@@ -1,7 +1,7 @@
 import torch
 
-from src.attention import *
-from src.modules import construct_future_mask
+from src.model.attention import *
+from src.model.modules import construct_future_mask
 
 d_model = 64
 h = 4

@@ -1,6 +1,6 @@
 import torch
 
-from src.modules import *
+from src.model.modules import *
 
 d_model = 64
 h = 4

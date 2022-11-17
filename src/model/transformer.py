@@ -4,8 +4,9 @@ import torch
 from torch import nn
 
 from src.constants import DICT_SIZE, N_LAYERS
-from src.embedding import WordEmbedding
-from src.modules import DecoderLayer, EncoderLayer
+
+from .embedding import WordEmbedding
+from .modules import DecoderLayer, EncoderLayer
 
 
 class Encoder(nn.Module):
