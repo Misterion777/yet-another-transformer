@@ -2,6 +2,7 @@ import re
 
 RETOK = re.compile(r"\w+|[^\w\s]|\n", re.UNICODE)
 
+
 def re_tokenize(text):
     r"""
     Tokenize using a liberal regular expression.
@@ -45,13 +46,14 @@ TOKENIZERS = {
     "split": split_tokenize,
 }
 
+
 class Dictionary:
     BOS_TOKEN = "<bos>"
     EOS_TOKEN = "<eos>"
     UNK_TOKEN = "<unk>"
     PAD_TOKEN = "<pad>"
 
-    def __init__(self, tokenizer_type = "re"):
+    def __init__(self, tokenizer_type="re"):
         self.word2idx = {}
         self.idx2word = []
         self.tokenizer = TOKENIZERS[tokenizer_type]
@@ -64,7 +66,7 @@ class Dictionary:
     @property
     def eos_id(self):
         return self.word2idx[self.EOS_TOKEN]
-    
+
     @property
     def unk_id(self):
         return self.word2idx[self.UNK_TOKEN]
@@ -72,19 +74,19 @@ class Dictionary:
     @property
     def pad_id(self):
         return self.word2idx[self.PAD_TOKEN]
-        
-    def tokens2id(self,tokens,add_unknown=False):
+
+    def tokens2id(self, tokens, add_unknown=False):
         if add_unknown:
             return self.add_tokens(tokens)
         else:
             ids = []
             for tok in tokens:
-                tok = self._sub_spec_token(tok)                
-                tok_id = self.word2idx.get(tok,self.unk_id)                
+                tok = self._sub_spec_token(tok)
+                tok_id = self.word2idx.get(tok, self.unk_id)
                 ids.append(tok_id)
             return ids
 
-    def ids2tokens(self,ids):                
+    def ids2tokens(self, ids):
         return [self.idx2word[id] for id in ids]
 
     def add_token(self, word):
@@ -104,9 +106,11 @@ class Dictionary:
         return tokens
 
     def _add_spec_tokens(self):
-        self.add_tokens([self.BOS_TOKEN,self.EOS_TOKEN,self.UNK_TOKEN,self.PAD_TOKEN])
+        self.add_tokens(
+            [self.BOS_TOKEN, self.EOS_TOKEN, self.UNK_TOKEN, self.PAD_TOKEN]
+        )
 
-    def _sub_spec_token(self,token):
+    def _sub_spec_token(self, token):
         if token == "\n":
             return self.EOS_TOKEN
         return token

@@ -12,14 +12,16 @@ class PositionalEncoding(nn.Module):
     def forward(self, x: torch.Tensor):
         batch_size = x.size(0)
         enc = torch.zeros(
-            batch_size, x.size(1), self.emb_size,device=x.device
+            batch_size, x.size(1), self.emb_size, device=x.device
         )  # B, sentence_length, emb_size
 
         i = (
-            torch.arange(self.emb_size,device=x.device).expand(batch_size, x.size(1), -1)
+            torch.arange(self.emb_size, device=x.device).expand(
+                batch_size, x.size(1), -1
+            )
             / self.emb_size
         )  # B, sentence_length, emb_size
-        pos = torch.arange(x.size(1),device=x.device).expand(
+        pos = torch.arange(x.size(1), device=x.device).expand(
             batch_size, self.emb_size, -1
         )  # B, emb_size, sentence_length
         pos = pos.reshape(

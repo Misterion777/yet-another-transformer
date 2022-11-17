@@ -1,12 +1,14 @@
 from typing import Optional
+
 import torch
 from torch import nn
+
 from src.attention import MultiHeadAttention
 from src.constants import ATTENTION_HEADS, DROPOUT_P, FF_DIM
 
 
 class FFN(nn.Module):
-    def __init__(self, in_dim: int, model_dim: int,ffn_size:int=FF_DIM):
+    def __init__(self, in_dim: int, model_dim: int, ffn_size: int = FF_DIM):
         super().__init__()
         self.lin1 = nn.Linear(in_dim, ffn_size)
         self.lin2 = nn.Linear(ffn_size, model_dim)
@@ -19,7 +21,11 @@ class FFN(nn.Module):
 
 class EncoderLayer(nn.Module):
     def __init__(
-        self, in_dim: int, model_dim: int, attn_heads: int = ATTENTION_HEADS,dropout_p:float=DROPOUT_P
+        self,
+        in_dim: int,
+        model_dim: int,
+        attn_heads: int = ATTENTION_HEADS,
+        dropout_p: float = DROPOUT_P,
     ):
         super().__init__()
         self.self_attn = MultiHeadAttention(
@@ -31,8 +37,10 @@ class EncoderLayer(nn.Module):
         self.drop2 = nn.Dropout(dropout_p)
         self.norm2 = nn.LayerNorm(model_dim)
 
-    def forward(self, input: torch.Tensor, input_mask: Optional[torch.Tensor] = None):
-        attn_result = self.self_attn(input, input, input,input_mask)
+    def forward(
+        self, input: torch.Tensor, input_mask: Optional[torch.Tensor] = None
+    ):
+        attn_result = self.self_attn(input, input, input, input_mask)
         attn_result = self.drop1(attn_result)
         attn_result = self.norm1(input + attn_result)
 
@@ -50,7 +58,7 @@ class DecoderLayer(nn.Module):
         encoder_dim: int,
         model_dim: int,
         attn_heads: int = ATTENTION_HEADS,
-        dropout_p:float=DROPOUT_P
+        dropout_p: float = DROPOUT_P,
     ):
         super().__init__()
         self.self_attn = MultiHeadAttention(
@@ -67,7 +75,12 @@ class DecoderLayer(nn.Module):
         self.drop3 = nn.Dropout(dropout_p)
         self.norm3 = nn.LayerNorm(model_dim)
 
-    def forward(self, input: torch.Tensor, encoder_output: torch.Tensor, input_mask: Optional[torch.Tensor]=None):
+    def forward(
+        self,
+        input: torch.Tensor,
+        encoder_output: torch.Tensor,
+        input_mask: Optional[torch.Tensor] = None,
+    ):
         batch_size, seq_len, emb_dim = input.size()
         self_mask = construct_future_mask(seq_len, batch_size)
         attn_result = self.self_attn(input, input, input, self_mask)
@@ -75,7 +88,7 @@ class DecoderLayer(nn.Module):
         attn_result = self.norm1(input + attn_result)
 
         enc_result = self.cross_attn(
-            attn_result, encoder_output, encoder_output,input_mask
+            attn_result, encoder_output, encoder_output, input_mask
         )
         enc_result = self.drop2(enc_result)
         enc_result = self.norm2(attn_result + enc_result)
@@ -84,6 +97,7 @@ class DecoderLayer(nn.Module):
         ffn_result = self.drop3(ffn_result)
         ffn_result = self.norm2(enc_result + ffn_result)
         return ffn_result
+
 
 def construct_future_mask(seq_len: int, batch_size: int = 1):
     """
