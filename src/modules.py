@@ -5,6 +5,7 @@ from torch import nn
 
 from src.attention import MultiHeadAttention
 from src.constants import ATTENTION_HEADS, DROPOUT_P, FF_DIM
+from src.utils import construct_future_mask
 
 
 class FFN(nn.Module):
@@ -97,16 +98,3 @@ class DecoderLayer(nn.Module):
         ffn_result = self.drop3(ffn_result)
         ffn_result = self.norm2(enc_result + ffn_result)
         return ffn_result
-
-
-def construct_future_mask(seq_len: int, batch_size: int = 1):
-    """
-    Construct a binary mask that contains 1's for all previous connections (autoregressive) and 0's for all outgoing future connections.
-    This mask will be applied to the attention logits in decoder self-attention such that all logits with a 0 mask are set to -inf.
-    :param seq_len: length of the input sequence
-    :return: (seq_len,seq_len) mask
-    """
-    subsequent_mask = torch.tril(
-        torch.ones(batch_size, seq_len, seq_len), diagonal=-1
-    )
-    return subsequent_mask

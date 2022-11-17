@@ -21,21 +21,7 @@ from src.datasets.dictionary import Dictionary
 from src.datasets.friends import FriendsDialog
 from src.datasets.wiki_text import WikiText
 from src.transformer import GeneratorTransformer
-
-
-def get_backend():
-    if torch.backends.mps.is_available():
-        if torch.backends.mps.is_built():
-            return "mps"
-        else:
-            print(
-                "MPS device detected, but it's not available because the current PyTorch install was not "
-                "built with MPS enabled."
-            )
-    if torch.cuda.is_available():
-        return "cuda"
-    return "cpu"
-
+from src.utils import get_backend
 
 DEVICE = torch.device(get_backend())
 print(f"Using device: {DEVICE}")
@@ -57,10 +43,6 @@ class TransformerTrainer:
         ).to(DEVICE)
         print("Trainer initialized, printing model architecture:")
         print(self.model)
-
-    def load_checkpoint(self, load_path: str):
-        loaded = torch.load(load_path, map_location=DEVICE)
-        self.model.load_state_dict(loaded)
 
     def train(
         self,
@@ -225,20 +207,7 @@ if __name__ == "__main__":
 
     trainer = TransformerTrainer(model, ds_dict)
 
-    # if mode == "train":
     trainer.train(train_loader, val_loader)
     print("Training complete, running evaluation on test set.")
     mean_loss, mean_ppl, mean_acc = trainer.test(test_loader)
     print(f"Test set PPL: {mean_ppl}")
-
-    # mode = "inference"
-    # elif mode == "inference":
-    #     trainer.load_checkpoint("checkpoints/checkpoint_001_1.8447.pt")
-    #     for data,target in train_loader:
-    #         generated = model.generate(data,ds_dict.bos_id)
-    #         data = data[:, 1:-1] # Ignore BOS and EOS
-    #         generated = generated.cpu().numpy()
-    #         prompt = ds_dict.ids2tokens(data[-1])
-    #         answer = ds_dict.ids2tokens(generated[-1])
-    #         print(f"Prompt:{prompt}\nAnswer:{answer}\n")
-    #         break

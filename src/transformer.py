@@ -118,3 +118,7 @@ class GeneratorTransformer(nn.Module):
             # Append the prediction to the already decoded tokens and construct the new mask
             dec_in = torch.cat((dec_in, predicted_tokens), dim=-1)
         return dec_in[:, 1:]  # ignore bos token
+
+    def load_checkpoint(self, load_path: str, device: torch.device):
+        loaded = torch.load(load_path, map_location=device)
+        self.load_state_dict(loaded)
