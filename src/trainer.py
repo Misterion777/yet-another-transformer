@@ -10,7 +10,6 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import sys
 
-from src.datasets.friends import FriendsDialog
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[1]  #root directory
@@ -20,6 +19,7 @@ if str(ROOT) not in sys.path:
 from src.constants import BATCH_SIZE, EMB_DIM, HIDDEN_DIM
 
 from src.datasets.dictionary import Dictionary
+from src.datasets.friends import FriendsDialog
 from src.datasets.wiki_text import WikiText
 from src.transformer import GeneratorTransformer
 
