@@ -2,7 +2,6 @@ import re
 
 RETOK = re.compile(r"\w+|[^\w\s]|\n", re.UNICODE)
 
-
 def re_tokenize(text):
     r"""
     Tokenize using a liberal regular expression.
@@ -100,6 +99,7 @@ class Dictionary:
         return [self.add_token(word) for word in tokens]
 
     def tokenize(self, text):
+        text = text.lower()
         tokens = self.tokenizer(text)
         return tokens
 

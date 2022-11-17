@@ -16,7 +16,7 @@ class FriendsDialog(Dataset):
         print(f"Building dataset defined by path: '{txt_path}'")
         with open(self.txt_path, "r", encoding="utf8") as f:
             for line in f:
-                ut1, ut2 = line.split("|")
+                ut1, ut2 = line.strip().split("|")
                 ut1_tokens = self.dictionary.tokenize(ut1)
                 ut1_ids = self.dictionary.tokens2id(ut1_tokens,add_unknown=build_dict)
 
